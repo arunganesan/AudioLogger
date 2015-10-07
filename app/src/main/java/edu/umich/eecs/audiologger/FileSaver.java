@@ -89,7 +89,6 @@ public class FileSaver extends Thread {
                         watch_tmp.close();
                     } catch (Exception e) {}
 
-                    mainActivity.player.turnOffSound();
 
                     String filepath = Environment.getExternalStorageDirectory().getPath();
                     File file = new File(filepath, AUDIO_RECORDER_FOLDER);
@@ -107,7 +106,6 @@ public class FileSaver extends Thread {
 
                     Log.v(TAG, "Tap size is bt=" + btTap.howMany() + " rec=" + recTap.howMany());
                     Log.v(TAG, "Saved data under name " + now);
-                    mainActivity.addInfo("Done!");
 
                     btTap.emptyBuffer();
                     recTap.emptyBuffer();
@@ -122,7 +120,6 @@ public class FileSaver extends Thread {
                     try {
                         //Thread.sleep(1000);
                         saved_count++;
-                        mainActivity.ready();
 
                         if (saved_count >= 9) {
                             saved_count = 0;
@@ -143,7 +140,6 @@ public class FileSaver extends Thread {
     public void deleteLast () {
         if (last_phone.exists()) last_phone.delete();
         if (last_watch.exists()) last_watch.delete();
-        mainActivity.addInfo("Deleted the last file. Please continue.");
     }
 
     public void doneBTStream () {
