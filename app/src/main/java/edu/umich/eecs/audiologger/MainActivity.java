@@ -5,6 +5,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -17,12 +18,13 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.File;
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity {
     Button toggleButton;
     TextView statusText;
     AlarmManager am;
-    PendingIntent pendingIntent;
-    Recorder recorder;
 
     final String TAG = "MainA";
 
@@ -35,8 +37,6 @@ public class MainActivity extends AppCompatActivity {
 
         wireUI();
         am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        Intent alarmIntent = new Intent(MainActivity.this, DoSample.class);
-        pendingIntent = PendingIntent.getBroadcast(MainActivity.this, 0, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
     @Override
@@ -69,6 +69,14 @@ public class MainActivity extends AppCompatActivity {
         toggleButton = (Button)findViewById(R.id.toggleButton);
         statusText = (TextView) findViewById(R.id.textView);
         toggleButton.setOnClickListener(setupAlarm);
+
+        if (alarmIsRunning()) toggleButton.setText("Stop Experiment");
+        else toggleButton.setText("Start Experiment");
+
+        String filename = Environment.getExternalStorageDirectory() + File.separator + "radiologger";
+        File savedir = new File(filename);
+        File[] files = savedir.listFiles();
+        statusText.setText("Collected " + files.length + " samples");
     }
 
 
@@ -84,14 +92,18 @@ public class MainActivity extends AppCompatActivity {
             if (alarmIsRunning()) {
                 Toast.makeText(MainActivity.this, "Stopped intent.", Toast.LENGTH_SHORT).show();
                 toggleButton.setText("Start Experiment");
-                am.cancel(pendingIntent);
-                pendingIntent.cancel();
+
+                PendingIntent pi = PendingIntent.getBroadcast(MainActivity.this,
+                        0, new Intent(MainActivity.this, DoSample.class), PendingIntent.FLAG_NO_CREATE);
+
+                am.cancel(pi);
+                pi.cancel();
             } else {
                 toggleButton.setText("Stop Experiment");
                 Toast.makeText(MainActivity.this, "Started intent.", Toast.LENGTH_SHORT).show();
-                Intent alarmIntent = new Intent(MainActivity.this, DoSample.class);
-                pendingIntent = PendingIntent.getBroadcast(MainActivity.this, 0, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-                am.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 8000, pendingIntent);
+                PendingIntent pi = PendingIntent.getBroadcast(MainActivity.this,
+                        0, new Intent(MainActivity.this, DoSample.class), PendingIntent.FLAG_UPDATE_CURRENT);
+                am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 1000*60*1, pi);
             }
         }
     };
