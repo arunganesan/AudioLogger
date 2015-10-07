@@ -61,6 +61,11 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    public void onResume () {
+        super.onResume();
+        updateText();
+   }
 
     /**
      * Function finds the UI elements and sets callback functions
@@ -73,14 +78,17 @@ public class MainActivity extends AppCompatActivity {
         if (alarmIsRunning()) toggleButton.setText("Stop Experiment");
         else toggleButton.setText("Start Experiment");
 
+        updateText();
+    }
+
+
+    void updateText (){
         String filename = Environment.getExternalStorageDirectory() + File.separator + "radiologger";
         File savedir = new File(filename);
         File[] files = savedir.listFiles();
         statusText.setText("Collected " + files.length + " samples");
+
     }
-
-
-
 
     /**
      * If the alarmmanager already has regular alarm, this turns on
