@@ -39,7 +39,7 @@
 
         <Button
             android:layout_width="300dp"
-            android:layout_height="75dp"
+            android:layout_height="150dp"
             android:layout_gravity="center"
             android:text="Start Experiment"
             android:id="@+id/toggleButton"/>

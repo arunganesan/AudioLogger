@@ -1,5 +1,6 @@
 package edu.umich.eecs.audiologger;
 
+import android.app.DialogFragment;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -20,14 +21,13 @@ import java.io.IOException;
  * The receiver wakes up, plays the script, records audio for the duration,
  * and then goes back to sleep. Very very simple.
  */
-public class DoSample extends BroadcastReceiver {
+public class DoSample {
     final String TAG = "DoSampler";
+    MainActivity mainActivity;
 
-    @Override
-    public void onReceive(final Context context, Intent intent) {
+    public void doOne (final MainActivity mainActivity) {
         // For our recurring task, we'll just display a message
-        Toast.makeText(context, "I'm running", Toast.LENGTH_SHORT).show();
-
+        this.mainActivity = mainActivity;
 
         new Thread(new Runnable() {
             @Override
@@ -37,7 +37,7 @@ public class DoSample extends BroadcastReceiver {
                 final MediaRecorder mrecorder = new MediaRecorder();
                 mrecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
                 mrecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-                String filename = Environment.getExternalStorageDirectory() + File.separator + "radiologger" + File.separator + System.currentTimeMillis() + ".m4a";
+                String filename = Environment.getExternalStorageDirectory() + File.separator + "radiologger" + File.separator + "temp.m4a";
                 Log.v(TAG, "Saving to file: " + filename);
                 mrecorder.setOutputFile(filename);
                 mrecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
@@ -50,22 +50,22 @@ public class DoSample extends BroadcastReceiver {
                 mrecorder.start();
 
                 // Set maximum volume
-                AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+                AudioManager am = (AudioManager) mainActivity.getSystemService(Context.AUDIO_SERVICE);
                 am.setStreamVolume(am.STREAM_MUSIC, am.getStreamMaxVolume(am.STREAM_MUSIC), 0);
 
-                // Play the script.
-                final MediaPlayer mplayer = MediaPlayer.create(context, R.raw.script);
-                mplayer.start();
-                mplayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                        @Override
-                        public void onCompletion(MediaPlayer mediaPlayer) {
-                            mrecorder.stop();
-                            mrecorder.release();
-                            mplayer.release();
-                        }
-                    }
-                );
+
+                /* Record for 5 seconds */
+                try { Thread.sleep(5000); } catch (Exception e) {}
+
+                mrecorder.stop();
+                mrecorder.release();
+                DialogFragment newFragment = new GroundTruthDialog();
+                newFragment.show(mainActivity.getFragmentManager(), "Stations");
             }
         }).start();
     }
+
+
+
+
 }

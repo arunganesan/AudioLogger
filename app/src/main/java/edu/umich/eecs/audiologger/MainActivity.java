@@ -1,6 +1,8 @@
 package edu.umich.eecs.audiologger;
 
 import android.app.AlarmManager;
+import android.app.DialogFragment;
+import android.app.Fragment;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -8,12 +10,15 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.FragmentActivity;
+import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -21,10 +26,10 @@ import android.widget.Toast;
 import java.io.File;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends ActionBarActivity implements GroundTruthDialog.DialogListener {
     Button toggleButton;
     TextView statusText;
-    AlarmManager am;
+    DoSample sampler;
 
     final String TAG = "MainA";
 
@@ -35,8 +40,10 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+        sampler = new DoSample();
         wireUI();
-        am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
     }
 
     @Override
@@ -73,11 +80,7 @@ public class MainActivity extends AppCompatActivity {
     void wireUI () {
         toggleButton = (Button)findViewById(R.id.toggleButton);
         statusText = (TextView) findViewById(R.id.textView);
-        toggleButton.setOnClickListener(setupAlarm);
-
-        if (alarmIsRunning()) toggleButton.setText("Stop Experiment");
-        else toggleButton.setText("Start Experiment");
-
+        toggleButton.setOnClickListener(doExperiment);
         updateText();
     }
 
@@ -87,40 +90,39 @@ public class MainActivity extends AppCompatActivity {
         File savedir = new File(filename);
         File[] files = savedir.listFiles();
         statusText.setText("Collected " + files.length + " samples");
-
     }
 
     /**
      * If the alarmmanager already has regular alarm, this turns on
      * Otherwise, it turns off
      */
-    View.OnClickListener setupAlarm = new View.OnClickListener() {
+    View.OnClickListener doExperiment = new View.OnClickListener() {
         @Override
         public void onClick (View v) {
-            if (alarmIsRunning()) {
-                Toast.makeText(MainActivity.this, "Stopped intent.", Toast.LENGTH_SHORT).show();
-                toggleButton.setText("Start Experiment");
-
-                PendingIntent pi = PendingIntent.getBroadcast(MainActivity.this,
-                        0, new Intent(MainActivity.this, DoSample.class), PendingIntent.FLAG_NO_CREATE);
-
-                am.cancel(pi);
-                pi.cancel();
-            } else {
-                toggleButton.setText("Stop Experiment");
-                Toast.makeText(MainActivity.this, "Started intent.", Toast.LENGTH_SHORT).show();
-                PendingIntent pi = PendingIntent.getBroadcast(MainActivity.this,
-                        0, new Intent(MainActivity.this, DoSample.class), PendingIntent.FLAG_UPDATE_CURRENT);
-                am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 1000*60*1, pi);
-            }
+            statusText.setText("Running experiment");
+            toggleButton.setEnabled(false);
+            sampler.doOne(MainActivity.this);
         }
     };
 
+    public void doneExperiment () {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                toggleButton.setEnabled(true);
+                updateText();
+            }
+        });
+    }
 
-    boolean alarmIsRunning () {
 
-        return (PendingIntent.getBroadcast(MainActivity.this, 0,
-                new Intent(MainActivity.this, DoSample.class),
-                PendingIntent.FLAG_NO_CREATE) != null);
+    @Override
+    public void onClick(DialogFragment dialog, String item) {
+        String tempname = Environment.getExternalStorageDirectory() + File.separator + "radiologger" + File.separator + "temp.m4a";
+        String newname = Environment.getExternalStorageDirectory() + File.separator + "radiologger" + File.separator + System.currentTimeMillis() + "-" + item + ".m4a";
+        File from = new File(tempname);
+        File to = new File(newname);
+        from.renameTo(to);
+        doneExperiment();
     }
 }

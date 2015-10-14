@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="stations_array">
+        <item>WCBN-88.3</item>
+        <item>WEMU-89.1</item>
+        <item>WKQI-95.5</item>
+        <item>WWWW-102.9</item>
+        <item>WQKL-107.1</item>
+        <item>None</item>
+    </string-array>
+</resources>
